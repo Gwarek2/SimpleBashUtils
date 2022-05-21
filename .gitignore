@@ -34,6 +34,8 @@
 *.i*86
 *.x86_64
 *.hex
+s21_cat
+s21_grep
 
 # Debug files
 *.dSYM/
@@ -49,3 +51,8 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+
+# IDE configs
+.vscode
+.idea
