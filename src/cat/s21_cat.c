@@ -23,10 +23,10 @@ int main(int argv, char *argc[]) {
 
 void initialize_state(struct cat_state *st) {
     st->flags.b_flag = false;
-    st->flags.b_flag = false;
-    st->flags.b_flag = false;
-    st->flags.b_flag = false;
-    st->flags.b_flag = false;
+    st->flags.e_flag = false;
+    st->flags.n_flag = false;
+    st->flags.s_flag = false;
+    st->flags.t_flag = false;
     st->line_count = 1;
     st->nl_previous = false;
 }
@@ -44,6 +44,7 @@ void read_cat_flags(struct cat_state *st, char *str) {
     size_t last_dash = get_dash_index(str);
     str += last_dash;
     if (last_dash == 2) {
+        st->flags.b_flag |= !strcmp(str, "number-nonblank");
         st->flags.n_flag |= !strcmp(str, "number");
         st->flags.s_flag |= !strcmp(str, "squeeze-blank");
     } else if (last_dash == 1) {
@@ -81,6 +82,7 @@ int print_line(FILE *f_stream, struct cat_state *st) {
     int ch = getc(f_stream);
 
     bool only_newline = ch == '\n';
+    st->nl_previous &= only_newline && st->flags.s_flag;
     if (st->flags.b_flag && !only_newline)
         printf(LINE_N_FMT, st->line_count++);
     else if (st->flags.n_flag && ch != EOF)
