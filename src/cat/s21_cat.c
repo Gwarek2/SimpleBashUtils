@@ -90,7 +90,7 @@ int print_line(FILE *f_stream, struct cat_state *st) {
 
     bool only_newline = ch == '\n';
     st->nl_previous &= only_newline && st->flags.s_flag;
-    if (st->flags.b_flag && !only_newline)
+    if (st->flags.b_flag && !only_newline && ch != EOF)
         printf(LINE_N_FMT, st->line_count++);
     else if (st->flags.n_flag && ch != EOF)
         printf(LINE_N_FMT, st->line_count++);
@@ -122,9 +122,9 @@ void print_v_format(int ch) {
     if (ch < 128)
         printf("%s", V_FORMAT[ch]);
     else
-        printf("M-%s", V_FORMAT[ch % 128]);
+        printf("%s%s", M_NOT, V_FORMAT[ch % 128]);
 }
 
 extern inline void print_error() {
-    puts(strerror(errno));
+    fputs(strerror(errno), stderr);
 }
