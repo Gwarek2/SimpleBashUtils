@@ -58,6 +58,7 @@ void read_cat_flags(struct cat_state *st, char *str) {
             st->flags.v_flag |= *str == 'v' || *str == 'e' || *str == 't';
             str++;
         }
+        st->flags.n_flag &= !st->flags.b_flag;
     } else {
         st->filenames = true;
     }
@@ -87,12 +88,13 @@ void print_file(const char *filename, struct cat_state *st) {
 
 int print_line(FILE *f_stream, struct cat_state *st) {
     int ch = getc(f_stream);
-
     bool only_newline = ch == '\n';
+    bool is_eof = ch == EOF;
     st->nl_previous &= only_newline && st->flags.s_flag;
-    if (st->flags.b_flag && !only_newline && ch != EOF)
+
+    if (st->flags.b_flag && !only_newline && !is_eof)
         printf(LINE_N_FMT, st->line_count++);
-    else if (st->flags.n_flag && ch != EOF)
+    else if (st->flags.n_flag && !is_eof)
         printf(LINE_N_FMT, st->line_count++);
 
     while (ch != EOF && ch != '\n') {
