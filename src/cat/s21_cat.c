@@ -1,4 +1,3 @@
-#include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -11,12 +10,12 @@ int main(int argv, char *argc[]) {
     struct cat_state state;
     initialize_state(&state);
     setlocale(LC_ALL, "");
-    if (argv > 1) {
-        read_flags(&state, argv - 1, argc + 1);
-        execute_cat(argc + 1, argv - 1, &state);
-    } else {
 
-    }
+    read_flags(&state, argv - 1, argc + 1);
+    if (state.filenames)
+        execute_cat_files(argc + 1, argv - 1, &state);
+    else
+        execute_cat_stdin(&state);
 
     return 0;
 }
@@ -27,8 +26,10 @@ void initialize_state(struct cat_state *st) {
     st->flags.n_flag = false;
     st->flags.s_flag = false;
     st->flags.t_flag = false;
+    st->flags.v_flag = false;
     st->line_count = 1;
     st->nl_previous = false;
+    st->filenames = false;
 }
 
 size_t get_dash_index(const char *str) {
@@ -57,15 +58,21 @@ void read_cat_flags(struct cat_state *st, char *str) {
             st->flags.v_flag |= *str == 'v' || *str == 'e' || *str == 't';
             str++;
         }
+    } else {
+        st->filenames = true;
     }
 }
 
-void execute_cat(char *args[], size_t argv, struct cat_state *st) {
+void execute_cat_files(char *args[], size_t argv, struct cat_state *st) {
     for (size_t i = 0; i < argv; i++) {
         size_t last_dash = get_dash_index(args[i]);
         if (last_dash == 0 || last_dash > 2)
             print_file(args[i], st);
     }
+}
+
+void execute_cat_stdin(struct cat_state *st) {
+    while (true) print_line(stdin, st);
 }
 
 void print_file(const char *filename, struct cat_state *st) {
@@ -90,7 +97,9 @@ int print_line(FILE *f_stream, struct cat_state *st) {
 
     while (ch != EOF && ch != '\n') {
         if (st->flags.t_flag && ch == '\t')
-            puts(T_TAB);
+            printf("%s", T_TAB);
+        else if (st->flags.v_flag)
+            print_v_format(ch);
         else
             putchar(ch);
         ch = getc(f_stream);
@@ -107,6 +116,13 @@ int print_line(FILE *f_stream, struct cat_state *st) {
         print_error();
 
     return ch;
+}
+
+void print_v_format(int ch) {
+    if (ch < 128)
+        printf("%s", V_FORMAT[ch]);
+    else
+        printf("M-%s", V_FORMAT[ch % 128]);
 }
 
 extern inline void print_error() {

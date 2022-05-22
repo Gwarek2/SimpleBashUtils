@@ -10,7 +10,7 @@ ALL_C=$(shell find . -name "*.c")
 
 .PHONY: s21_cat
 s21_cat: $(CAT_FILES)
-	$(CC) $(FLAGS) cat/s21_cat.c -o s21_cat
+	$(CC) $(FLAGS) cat/s21_cat.c -o cat/s21_cat
 
 s21_grep:
 
