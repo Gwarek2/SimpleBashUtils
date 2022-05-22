@@ -18,7 +18,7 @@ static_analysis:
 	@-cp ../materials/linters/* .
 	python3 cpplint.py --extensions=c $(ALL_C)
 	@-rm cpplint.py CPPLINT.cfg
-	cppcheck $(ALL_C)
+	cppcheck --enable=all --suppress=missingIncludeSystem $(ALL_C)
 
 clean:
 	@-rm -rf *.o obj *.out *.dSYM s21_cat
