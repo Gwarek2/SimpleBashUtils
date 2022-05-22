@@ -119,16 +119,18 @@ int print_line(FILE *f_stream, struct cat_state *st) {
 }
 
 void print_v_format(int ch) {
-    if (ch < 128) {
-        printf("%s", V_FORMAT[ch]);
-    } else {
-        char *symbol = (char*) V_FORMAT[ch % 128];
-        if (*symbol == '\t')
-            symbol = T_TAB;
-        else if (*symbol == '\n')
-            symbol = V_NL;
-        printf("%s%s", M_NOT, symbol);
-    }
+    int converted_ch = ch % 128;
+    if (ch < 128 &&
+            (converted_ch < 32 || converted_ch == 127) &&
+            converted_ch != 9 && converted_ch != 10)
+        printf("^%c", converted_ch + 64);
+    else if (ch >= 128 && converted_ch < 32)
+        printf("%s^%c", M_NOT, converted_ch + 64);
+    else if (ch >= 128)
+        printf("%s%c", M_NOT, converted_ch);
+    else
+        printf("%c", converted_ch);
+    
 }
 
 extern inline void print_error() {
