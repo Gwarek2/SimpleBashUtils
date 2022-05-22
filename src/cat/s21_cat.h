@@ -5,6 +5,7 @@
 
 #define T_TAB "^I"
 #define M_NOT "M-"
+#define V_NL "^J"
 
 struct cat_state {
     struct {
