@@ -1,5 +1,7 @@
+from itertools import permutations
 import unittest
 import os
+import sys
 import difflib
 
 CAT_FILE = "cat.txt"
@@ -24,6 +26,12 @@ def get_diff():
 def execute_cat(file, args):
     os.system(f"./s21_cat {args} {file} > {S21_CAT_FILE}")
     os.system(f"cat {args} {file} > {CAT_FILE}")
+
+
+def skip_if_not_gnu(test_func):
+    if sys.platform == "linux":
+        return test_func
+    return None
 
 
 class CatSingleOptionsTestCase(unittest.TestCase):
@@ -67,6 +75,7 @@ class CatSingleOptionsTestCase(unittest.TestCase):
             diff = get_diff()
             self.assertFalse(diff, diff)
     
+    @skip_if_not_gnu
     def test_gnu_E_option(self):
         for file in self.test_files:
             execute_cat(file, '-E')
@@ -79,6 +88,7 @@ class CatSingleOptionsTestCase(unittest.TestCase):
             diff = get_diff()
             self.assertFalse(diff, diff)
 
+    @skip_if_not_gnu
     def test_gnu_T_option(self):
         for file in self.test_files:
             execute_cat(file, '-T')
@@ -91,12 +101,14 @@ class CatSingleOptionsTestCase(unittest.TestCase):
             diff = get_diff()
             self.assertFalse(diff, diff)
 
+    @skip_if_not_gnu
     def test_gnu_s_option(self):
         for file in self.test_files:
             execute_cat(file, '--squeeze-blank')
             diff = get_diff()
             self.assertFalse(diff, diff)
 
+    @skip_if_not_gnu
     def test_v_option(self):
         for file in self.test_files:
             execute_cat(file, '-v')
@@ -108,12 +120,104 @@ class CatSingleOptionsTestCase(unittest.TestCase):
         os.remove(CAT_FILE)
 
 
-# class CatMultipleOptionsTestCase(unittest.TestCase):
+class CatMultipleOptionsTestCase(unittest.TestCase):
 
-#     def setUp(self):
-#         self.test_files = get_test_files();
+    all_flags = ('b', 'e', 'n', 's', 't')
 
+    def setUp(self):
+        self.test_files = get_test_files();
     
+    def test_two_flags(self):
+        for file in self.test_files:
+            for flags in permutations(self.all_flags, 2):
+                execute_cat(file, '-' + ''.join(flags))
+                diff = get_diff()
+                self.assertFalse(
+                    diff, f"\nflags:\n {flags}\n{diff}"
+                )
+    
+    def test_three_flags(self):
+        for file in self.test_files:
+            for flags in permutations(self.all_flags, 3):
+                execute_cat(file, '-' + ''.join(flags))
+                diff = get_diff()
+                self.assertFalse(
+                    diff, f"\nflags:\n {flags}\n{diff}"
+                )
+
+    def test_four_flags(self):
+        for file in self.test_files:
+            for flags in permutations(self.all_flags, 4):
+                execute_cat(file, '-' + ''.join(flags))
+                diff = get_diff()
+                self.assertFalse(
+                    diff, f"\nflags:\n {flags}\n{diff}"
+                )
+
+    def test_five_flags(self):
+        for file in self.test_files:
+            execute_cat(file, '-' + "".join(self.all_flags))
+            diff = get_diff()
+            self.assertFalse(diff, diff)
+
+    def tearDown(self):
+        os.remove(S21_CAT_FILE)
+        os.remove(CAT_FILE)
+
+
+@skip_if_not_gnu
+class CatMultipleOptionsTestCase(unittest.TestCase):
+
+    all_flags = ("-E", "-T", "-v", "--number-nonblank", "--number", "--squeeze-blank")
+
+    def setUp(self):
+        self.test_files = get_test_files();
+
+    def test_two_flags(self):
+        for file in self.test_files:
+            for flags in permutations(self.all_flags, 2):
+                execute_cat(file, " ".join(flags))
+                diff = get_diff()
+                self.assertFalse(
+                    diff, f"\nflags:\n {flags}\n{diff}"
+                )
+    
+    def test_three_flags(self):
+        for file in self.test_files:
+            for flags in permutations(self.all_flags, 3):
+                execute_cat(file, " ".join(flags))
+                diff = get_diff()
+                self.assertFalse(
+                    diff, f"\nflags:\n {flags}\n{diff}"
+                )
+
+    def test_four_flags(self):
+        for file in self.test_files:
+            for flags in permutations(self.all_flags, 4):
+                execute_cat(file, " ".join(flags))
+                diff = get_diff()
+                self.assertFalse(
+                    diff, f"\nflags:\n {flags}\n{diff}"
+                )
+
+    def test_five_flags(self):
+        for file in self.test_files:
+            for flags in permutations(self.all_flags, 5):
+                execute_cat(file, " ".join(flags))
+                diff = get_diff()
+                self.assertFalse(
+                    diff, f"\nflags:\n {flags}\n{diff}"
+                )
+
+    def test_six_flags(self):
+        for file in self.test_files:
+            execute_cat(file, " ".join(self.all_flags))
+            diff = get_diff()
+            self.assertFalse(diff, diff)
+
+    def tearDown(self):
+        os.remove(S21_CAT_FILE)
+        os.remove(CAT_FILE)
 
 
 if __name__ == "__main__":
