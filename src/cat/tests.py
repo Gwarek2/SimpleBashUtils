@@ -37,7 +37,7 @@ def skip_if_not_gnu(test_func):
 class CatSingleOptionsTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.test_files = get_test_files();
+        self.test_files = get_test_files()
 
     def test_no_option(self):
         for file in self.test_files:
@@ -51,6 +51,7 @@ class CatSingleOptionsTestCase(unittest.TestCase):
             diff = get_diff()
             self.assertFalse(diff, diff)
 
+    @skip_if_not_gnu
     def test_gnu_n_option(self):
         for file in self.test_files:
             execute_cat(file, '--number')
@@ -63,6 +64,7 @@ class CatSingleOptionsTestCase(unittest.TestCase):
             diff = get_diff()
             self.assertFalse(diff, diff)
 
+    @skip_if_not_gnu
     def test_gnu_b_option(self):
         for file in self.test_files:
             execute_cat(file, '--number-nonblank')
@@ -125,7 +127,7 @@ class CatMultipleOptionsTestCase(unittest.TestCase):
     all_flags = ('b', 'e', 'n', 's', 't')
 
     def setUp(self):
-        self.test_files = get_test_files();
+        self.test_files = get_test_files()
     
     def test_two_flags(self):
         for file in self.test_files:
@@ -166,12 +168,12 @@ class CatMultipleOptionsTestCase(unittest.TestCase):
 
 
 @skip_if_not_gnu
-class CatMultipleOptionsTestCase(unittest.TestCase):
+class CatGNUMultipleOptionsTestCase(unittest.TestCase):
 
     all_flags = ("-E", "-T", "-v", "--number-nonblank", "--number", "--squeeze-blank")
 
     def setUp(self):
-        self.test_files = get_test_files();
+        self.test_files = get_test_files()
 
     def test_two_flags(self):
         for file in self.test_files:
@@ -214,6 +216,82 @@ class CatMultipleOptionsTestCase(unittest.TestCase):
             execute_cat(file, " ".join(self.all_flags))
             diff = get_diff()
             self.assertFalse(diff, diff)
+
+    def tearDown(self):
+        os.remove(S21_CAT_FILE)
+        os.remove(CAT_FILE)
+
+
+class CatMultipleFilesTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.test_files = " ".join(get_test_files())
+
+    def test_no_option(self):
+        execute_cat(self.test_files, '')
+        diff = get_diff()
+        self.assertFalse(diff, diff)
+
+    def test_n_option(self):
+        execute_cat(self.test_files, '-n')
+        diff = get_diff()
+        self.assertFalse(diff, diff)
+
+    @skip_if_not_gnu
+    def test_gnu_n_option(self):
+        execute_cat(self.test_files, '--number')
+        diff = get_diff()
+        self.assertFalse(diff, diff)
+
+    def test_b_option(self):
+        execute_cat(self.test_files, '-b')
+        diff = get_diff()
+        self.assertFalse(diff, diff)
+
+    @skip_if_not_gnu
+    def test_gnu_b_option(self):
+        execute_cat(self.test_files, '--number-nonblank')
+        diff = get_diff()
+        self.assertFalse(diff, diff)
+
+    def test_e_option(self):
+        execute_cat(self.test_files, '-e')
+        diff = get_diff()
+        self.assertFalse(diff, diff)
+    
+    @skip_if_not_gnu
+    def test_gnu_E_option(self):
+        execute_cat(self.test_files, '-E')
+        diff = get_diff()
+        self.assertFalse(diff, diff)
+    
+    def test_t_option(self):
+        execute_cat(self.test_files, '-t')
+        diff = get_diff()
+        self.assertFalse(diff, diff)
+
+    @skip_if_not_gnu
+    def test_gnu_T_option(self):
+        execute_cat(self.test_files, '-T')
+        diff = get_diff()
+        self.assertFalse(diff, diff)
+
+    def test_s_option(self):
+        execute_cat(self.test_files, '-s')
+        diff = get_diff()
+        self.assertFalse(diff, diff)
+
+    @skip_if_not_gnu
+    def test_gnu_s_option(self):
+        execute_cat(self.test_files, '--squeeze-blank')
+        diff = get_diff()
+        self.assertFalse(diff, diff)
+
+    @skip_if_not_gnu
+    def test_v_option(self):
+        execute_cat(self.test_files, '-v')
+        diff = get_diff()
+        self.assertFalse(diff, diff)
 
     def tearDown(self):
         os.remove(S21_CAT_FILE)
