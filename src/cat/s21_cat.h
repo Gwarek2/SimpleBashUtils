@@ -17,8 +17,9 @@ struct cat_state {
         bool v_flag;
     } flags;
     size_t line_count;
-    bool nl_previous;
+    bool empty_prev_line;
     bool filenames;
+    int last_symbol;
 };
 
 void initialize_state(struct cat_state *st);

@@ -28,8 +28,9 @@ void initialize_state(struct cat_state *st) {
     st->flags.t_flag = false;
     st->flags.v_flag = false;
     st->line_count = 1;
-    st->nl_previous = false;
+    st->empty_prev_line = false;
     st->filenames = false;
+    st->last_symbol = '\n';
 }
 
 size_t get_dash_index(const char *str) {
@@ -58,10 +59,10 @@ void read_cat_flags(struct cat_state *st, char *str) {
             st->flags.v_flag |= *str == 'v' || *str == 'e' || *str == 't';
             str++;
         }
-        st->flags.n_flag &= !st->flags.b_flag;
     } else {
         st->filenames = true;
     }
+    st->flags.n_flag &= !st->flags.b_flag;
 }
 
 void execute_cat_files(char *args[], size_t argv, struct cat_state *st) {
@@ -90,11 +91,12 @@ int print_line(FILE *f_stream, struct cat_state *st) {
     int ch = getc(f_stream);
     bool only_newline = ch == '\n';
     bool is_eof = ch == EOF;
-    st->nl_previous &= only_newline && st->flags.s_flag;
+    bool is_prev_nl = st->last_symbol == '\n';
+    st->empty_prev_line &= only_newline && st->flags.s_flag;
 
-    if (st->flags.b_flag && !only_newline && !is_eof)
+    if (st->flags.b_flag && !only_newline && !is_eof && is_prev_nl)
         printf(LINE_N_FMT, st->line_count++);
-    else if (st->flags.n_flag && !is_eof)
+    else if (st->flags.n_flag && !is_eof && !st->empty_prev_line && is_prev_nl)
         printf(LINE_N_FMT, st->line_count++);
 
     while (ch != EOF && ch != '\n') {
@@ -104,15 +106,17 @@ int print_line(FILE *f_stream, struct cat_state *st) {
             print_v_format(ch);
         else
             putchar(ch);
+        st->last_symbol = ch;
         ch = getc(f_stream);
     }
 
-    if (ch != EOF && !st->nl_previous) {
+    if (ch != EOF) st->last_symbol = ch;
+    if (ch != EOF && !st->empty_prev_line) {
         if (st->flags.e_flag) putchar('$');
         putchar(ch);
     }
 
-    st->nl_previous = only_newline && st->flags.s_flag;
+    st->empty_prev_line = only_newline && st->flags.s_flag;
 
     if (ferror(f_stream))
         print_error();
