@@ -30,6 +30,5 @@ void execute_cat_stdin(struct cat_state *st);
 void print_file(const char *filename, struct cat_state *st);
 int print_line(FILE *f_stream, struct cat_state *st);
 void print_v_format(int ch);
-inline void print_error();
 
 #endif  // S21_CAT

@@ -1,10 +1,10 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <errno.h>
 #include <locale.h>
 
 #include "s21_cat.h"
+#include "../common/utils.h"
 
 int main(int argv, char *argc[]) {
     struct cat_state state;
@@ -31,10 +31,6 @@ void initialize_state(struct cat_state *st) {
     st->empty_prev_line = false;
     st->filenames = false;
     st->last_symbol = '\n';
-}
-
-size_t get_dash_index(const char *str) {
-    return strspn(str, "-");
 }
 
 void read_flags(struct cat_state *st, size_t argv, char *args[]) {
@@ -70,6 +66,9 @@ void execute_cat_files(char *args[], size_t argv, struct cat_state *st) {
         size_t last_dash = get_dash_index(args[i]);
         if (last_dash == 0 || last_dash > 2)
             print_file(args[i], st);
+        #ifndef __LINUX__
+        st->line_count = 1;
+        #endif
     }
 }
 
@@ -91,7 +90,11 @@ int print_line(FILE *f_stream, struct cat_state *st) {
     int ch = getc(f_stream);
     bool only_newline = ch == '\n';
     bool is_eof = ch == EOF;
+    #ifdef __LINUX__
     bool is_prev_nl = st->last_symbol == '\n';
+    #else
+    bool is_prev_nl = true;
+    #endif
     st->empty_prev_line &= only_newline && st->flags.s_flag;
 
     if (st->flags.b_flag && !only_newline && !is_eof && is_prev_nl)
@@ -137,8 +140,4 @@ void print_v_format(int ch) {
     else
         printf("%c", converted_ch);
     
-}
-
-extern inline void print_error() {
-    fputs(strerror(errno), stderr);
 }

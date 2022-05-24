@@ -1,10 +1,10 @@
 CC=gcc
 FLAGS=-Wall -Werror -Wextra -std=c11 #-g -fsanitize=address
-CAT_FILES=s21_cat.c s21_cat.h
+CAT_FILES=../common/utils.c s21_cat.c
 
 .PHONY: s21_cat
 s21_cat: $(CAT_FILES)
-	$(CC) $(FLAGS) s21_cat.c -o s21_cat
+	$(CC) $(FLAGS) $(CAT_FILES) -o s21_cat
 
 clean:
 	@-rm s21_cat
