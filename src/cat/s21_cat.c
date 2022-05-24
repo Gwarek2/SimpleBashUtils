@@ -66,7 +66,7 @@ void execute_cat_files(char *args[], size_t argv, struct cat_state *st) {
         size_t last_dash = get_dash_index(args[i]);
         if (last_dash == 0 || last_dash > 2)
             print_file(args[i], st);
-        #ifndef __LINUX__
+        #ifdef __APPLE__
         st->line_count = 1;
         #endif
     }
@@ -90,10 +90,10 @@ int print_line(FILE *f_stream, struct cat_state *st) {
     int ch = getc(f_stream);
     bool only_newline = ch == '\n';
     bool is_eof = ch == EOF;
-    #ifdef __LINUX__
-    bool is_prev_nl = st->last_symbol == '\n';
-    #else
+    #ifdef __APPLE__
     bool is_prev_nl = true;
+    #else
+    bool is_prev_nl = st->last_symbol == '\n';
     #endif
     st->empty_prev_line &= only_newline && st->flags.s_flag;
 
