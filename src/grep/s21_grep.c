@@ -109,6 +109,51 @@ void parse_options(int argc, char *argv[], struct grep_state *st) {
     }
 }
 
+void search_in_files(struct llist *patterns, struct llist *files, struct grep_state *st) {
+    while (files != NULL) {
+        FILE *f = fopen(files->data, "r");
+        if (f != NULL) {
+            search_for_patterns(f, patterns, st);
+            fclose(f);
+        } else {
+            print_error();
+        }
+        files = files->next;
+    }
+}
+
+void search_file_for_patterns(FILE *f, struct llist *patterns, struct grep_state *st) {
+    ssize_t len = 0;
+    size_t line_count = 0;
+    while (true) {
+        char *buffer = NULL;
+        len = getline(&buffer, 0, f);
+        if (len == -1) {
+            free(buffer);
+            break;
+        }
+        search_patterns_in_line(buffer, patterns, st);
+        free(buffer);
+    }
+    if (ferror(f) && !st->flags.s)
+        print_error();
+}
+
+void search_pattern_in_line(char *line, struct llist *patterns, struct grep_state *st) {
+    bool match = false;
+    while (patterns != NULL && !match) {
+        int cflag = st->flags.i ? REG_ICASE : REG_BASIC;
+        regex_t re;
+        regmatch_t pmatch[1];
+        size_t i = 0;
+        if (regcomp(&re, patterns->data, cflag | REG_NOSUB) == 0) {
+            match = regexec(&re, line, 1, pmatch, 0);
+            regfree(&re);
+        }
+        patterns = patterns->next;
+    }
+}
+
 struct llist* initialize_llist() {
     struct llist *ll = malloc(sizeof(struct llist));
     ll->next = NULL;
