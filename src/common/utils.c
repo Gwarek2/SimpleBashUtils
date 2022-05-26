@@ -6,6 +6,7 @@
 
 void print_error() {
     fputs(strerror(errno), stderr);
+    putchar('\n');
 }
 
 size_t get_dash_index(const char *str) {
