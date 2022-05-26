@@ -1,6 +1,11 @@
 #ifndef S21_CAT
 #define S21_CAT
 
+#define CAT_DEFAULT {\
+    { false, false, false, false, false, false },\
+    1, false, false, '\n'\
+};
+
 #define LINE_N_FMT "%6lu\t"
 
 #define T_TAB "^I"
@@ -22,7 +27,6 @@ struct cat_state {
     int last_symbol;
 };
 
-void initialize_state(struct cat_state *st);
 void read_flags(struct cat_state *st, size_t argv, char *args[]);
 void read_cat_flags(struct cat_state *st, char *str);
 void execute_cat_files(char *args[], size_t argv, struct cat_state *st);

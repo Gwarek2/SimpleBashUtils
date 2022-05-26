@@ -7,8 +7,7 @@
 #include "../common/utils.h"
 
 int main(int argv, char *argc[]) {
-    struct cat_state state;
-    initialize_state(&state);
+    struct cat_state state = CAT_DEFAULT;
     setlocale(LC_ALL, "");
 
     read_flags(&state, argv - 1, argc + 1);
@@ -18,19 +17,6 @@ int main(int argv, char *argc[]) {
         execute_cat_stdin(&state);
 
     return 0;
-}
-
-void initialize_state(struct cat_state *st) {
-    st->flags.b_flag = false;
-    st->flags.e_flag = false;
-    st->flags.n_flag = false;
-    st->flags.s_flag = false;
-    st->flags.t_flag = false;
-    st->flags.v_flag = false;
-    st->line_count = 1;
-    st->empty_prev_line = false;
-    st->filenames = false;
-    st->last_symbol = '\n';
 }
 
 void read_flags(struct cat_state *st, size_t argv, char *args[]) {
