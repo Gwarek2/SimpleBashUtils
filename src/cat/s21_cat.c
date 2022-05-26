@@ -129,7 +129,11 @@ int print_line(FILE *f_stream, struct cat_state *st) {
 
 void print_v_format(int ch) {
     int converted_ch = ch % 128;
-    if (ch < 128 &&
+    if (ch == 127)
+        printf("^%c", converted_ch - 64);
+    else if (ch >= 128 && converted_ch == 1)
+        printf("%s^%c", M_NOT, converted_ch - 64);
+    else if (ch < 128 &&
             (converted_ch < 32 || converted_ch == 127) &&
             converted_ch != 9 && converted_ch != 10)
         printf("^%c", converted_ch + 64);
