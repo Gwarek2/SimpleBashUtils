@@ -187,7 +187,7 @@ int search_offsets_in_file(FILE *f, char *filename, struct llist *patterns, stru
         if (len == -1) {
             status = buffer == NULL || pmatch_arr.data == NULL;
             if (buffer != NULL) free(buffer);
-            if (status && pmatch_arr.data != NULL) free(pmatch_arr.data);
+            if (pmatch_arr.data != NULL) free(pmatch_arr.data);
             break;
         }
         bool match = find_offsets_in_line(buffer, patterns, st, &pmatch_arr);
