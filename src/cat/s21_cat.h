@@ -6,7 +6,7 @@
     1, false, false, '\n'\
 };
 
-#define LINE_N_FMT "%6lu\t"
+#define LINE_N_FMT "%6zu\t"
 
 #define T_TAB "^I"
 #define M_NOT "M-"

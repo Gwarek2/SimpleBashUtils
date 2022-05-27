@@ -65,7 +65,7 @@ void execute_cat_stdin(struct cat_state *st) {
 void print_file(const char *filename, struct cat_state *st) {
     FILE *f = fopen(filename, "r");
     if (f != NULL) {
-        while (print_line(f, st) != EOF);
+        while (print_line(f, st) != EOF) {}
         fclose(f);
     } else {
         print_error();
@@ -129,5 +129,4 @@ void print_v_format(int ch) {
         printf("%s%c", M_NOT, converted_ch);
     else
         printf("%c", converted_ch);
-    
 }

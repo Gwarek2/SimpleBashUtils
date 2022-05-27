@@ -48,17 +48,16 @@ int parse_regexes(int argc, char *argv[], struct llist *patterns, struct grep_st
     }
     if (!st->flags.e && !st->flags.f)
         patterns = add_to_llist(patterns, *argv, false);
-    
     return patterns == NULL;
 }
 
 struct llist* read_regex_from_file(char *filename, struct llist *patterns) {
     FILE *f = fopen(filename, "r");
     if (f != NULL) {
-        ssize_t len = 0;
         while (true) {
             char *str = NULL;
             size_t s = 0;
+            ssize_t len = 0;
             len = getline(&str, &s, f);
             if (len == -1 || patterns == NULL) {
                 if (str != NULL) free(str);
@@ -128,11 +127,11 @@ int process_files(struct llist *patterns, struct llist *files, struct grep_state
 
 int search_in_file(FILE *f, char *filename, struct llist *patterns, struct grep_state *st) {
     int status = 0;
-    ssize_t len = 0;
     size_t lines_count = 1;
     size_t match_count = 0;
     while (true) {
         char *buffer = NULL;
+        ssize_t len = 0;
         size_t s = 0;
         len = getline(&buffer, &s, f);
         if (len == -1) {
@@ -169,7 +168,7 @@ bool find_match(char *line, char *pattern, struct grep_state *st) {
     if (status == 0) {
         status = regexec(&re, line, 0, NULL, 0);
         regfree(&re);
-        match = !status ^ st->flags.v;
+        match = (!status) ^ (st->flags.v);
     }
     if (status != 0 && status != REG_NOMATCH)
         print_regex_error(status, &re);
@@ -178,10 +177,10 @@ bool find_match(char *line, char *pattern, struct grep_state *st) {
 
 int search_offsets_in_file(FILE *f, char *filename, struct llist *patterns, struct grep_state *st) {
     int status = 0;
-    ssize_t len = 0;
     size_t lines_count = 1;
     while (true) {
         char *buffer = NULL;
+        ssize_t len = 0;
         size_t s = 0;
         len = getline(&buffer, &s, f);
         struct offset_array pmatch_arr = { malloc(sizeof(regmatch_t)), 0 };
@@ -217,8 +216,8 @@ bool find_offsets(char *line, char *pattern, struct offset_array *pmatch_arr, st
     regex_t re;
 
     int status = regcomp(&re, pattern, cflag);
-    int i = 0;
     if (status == 0) {
+        int i = 0;
         while (true) {
             int index = pmatch_arr->last_index;
             status = regexec(&re, line + i, 1, pmatch_arr->data + index, 0);
@@ -248,18 +247,17 @@ void output_line(char *line, char *filename, size_t line_number, struct grep_sta
 
 void output_substrings(char *line, char *filename, size_t line_number, struct offset_array *pmatch_arr, struct grep_state *st) {
     if (!st->flags.o) print_line_credentials(filename, line_number, st);
-    int start = 0;
     int end = 0;
     for (size_t i = 0; i < pmatch_arr->last_index; i++) {
         if (pmatch_arr->data[i].rm_eo > end && pmatch_arr->data[i].rm_so >= end) {
             if (st->flags.o) print_line_credentials(filename, line_number, st);
             while (end < pmatch_arr->data[i].rm_so && !st->flags.o)
                 putchar(line[end++]);
-            start = pmatch_arr->data[i].rm_so;
+            int start = pmatch_arr->data[i].rm_so;
             end = pmatch_arr->data[i].rm_eo;
-            for (int i = start; i < end; i++) {
+            for (int j = start; j < end; j++) {
                 printf("\x1b[31m");
-                putchar(line[i]);
+                putchar(line[j]);
                 printf("\x1b[0m");
             }
             if (st->flags.o) putchar('\n');
