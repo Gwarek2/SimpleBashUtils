@@ -196,6 +196,7 @@ int search_offsets_in_file(FILE *f, char *filename, struct llist *patterns, stru
             if (match) output_substrings(buffer, filename, lines_count, &pmatch_arr, st);
         }
         free(buffer);
+        free(pmatch_arr.data);
         lines_count++;
     }
     return status;
@@ -256,11 +257,8 @@ void output_substrings(char *line, char *filename, size_t line_number, struct of
             int start = pmatch_arr->data[i].rm_so;
             end = pmatch_arr->data[i].rm_eo;
             for (int j = start; j < end; j++) {
-                printf("\x1b[31m");
-                putchar(line[j]);
-                printf("\x1b[0m");
+                RED putchar(line[j]); RED_END
             }
-            if (st->flags.o) putchar('\n');
         }
     }
     int len = strlen(line);

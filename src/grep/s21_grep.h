@@ -7,6 +7,9 @@
     0, 0\
 };
 
+#define RED printf("\x1b[31m");
+#define RED_END printf("\x1b[0m");
+
 
 struct grep_state {
     struct {
