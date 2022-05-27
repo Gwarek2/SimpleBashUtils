@@ -8,42 +8,51 @@
 #include "../common/utils.h"
 
 int main(int argc, char *argv[]) {
+    int status = 0;
     struct grep_state state = GREP_DEFAULT;
     struct llist *patterns = initialize_llist();
     struct llist *files = initialize_llist();
+    status |= files == NULL && patterns == NULL;
 
-    parse_cmd_args(argc - 1, argv + 1, &state, patterns, files);
-    process_files(patterns->next, files->next, &state);
+    if (!status) {
+        status |= parse_cmd_args(argc - 1, argv + 1, &state, patterns, files) != 1 &&
+                  process_files(patterns->next, files->next, &state) != 1;
+    }
 
     free_llist(patterns);
     free_llist(files);
-    return 0;
+    if (status) print_error();
+    return status;
 }
 
-void parse_cmd_args(int argc, char *argv[], struct grep_state *st, struct llist *patterns, struct llist *files) {
-    parse_regexes(argc, argv, patterns, st);
-    parse_files(argc, argv, files, st);
+int parse_cmd_args(int argc, char *argv[], struct grep_state *st, struct llist *patterns, struct llist *files) {
+    int status = 0;
+    status |= parse_regexes(argc, argv, patterns, st);
+    status |= parse_files(argc, argv, files, st);
     parse_options(argc, argv, st);
+    return status;
 }
 
-void parse_regexes(int argc, char *argv[], struct llist *patterns, struct grep_state *st) {
-    for (int i = 0; i < argc - 1; i++) {
+int parse_regexes(int argc, char *argv[], struct llist *patterns, struct grep_state *st) {
+    for (int i = 0; i < argc - 1 && patterns != NULL; i++) {
         bool is_opt = get_dash_index(argv[i]) == 1;
         if (is_opt && strchr(argv[i], 'e')) {
             i++;
             st->flags.e = true;
-            add_to_llist(patterns, argv[i], false);
+            patterns = add_to_llist(patterns, argv[i], false);
         } else if (is_opt && strchr(argv[i], 'f')) {
             i++;
             st->flags.f = true;
-            read_regex_from_file(argv[i], patterns);
+            patterns = read_regex_from_file(argv[i], patterns);
         }
     }
     if (!st->flags.e && !st->flags.f)
-        add_to_llist(patterns, argv, false);
+        patterns = add_to_llist(patterns, argv, false);
+    
+    return patterns == NULL;
 }
 
-void read_regex_from_file(char *filename, struct llist *patterns) {
+struct llist* read_regex_from_file(char *filename, struct llist *patterns) {
     FILE *f = fopen(filename, "r");
     if (f != NULL) {
         ssize_t len = 0;
@@ -51,30 +60,30 @@ void read_regex_from_file(char *filename, struct llist *patterns) {
             char *str = NULL;
             size_t s = 0;
             len = getline(&str, &s, f);
-            if (len == -1) {
-                free(str);
+            if (len == -1 || patterns == NULL) {
+                if (str != NULL) free(str);
                 break;
             }
             if (str[len - 1] == '\n') str[len - 1] = '\0';
-            add_to_llist(patterns, str, true);
+            patterns = add_to_llist(patterns, str, true);
         }
-        if (ferror(f))
-            print_error();
     } else {
         print_error();
     }
+    return patterns;
 }
 
-void parse_files(int argc, char *argv[], struct llist *files, struct grep_state *st) {
-    for (int i = 0; i < argc; i++) {
+int parse_files(int argc, char *argv[], struct llist *files, struct grep_state *st) {
+    for (int i = 0; i < argc && files != NULL; i++) {
         bool is_opt = get_dash_index(argv[i]) == 1;
         if (is_opt && strpbrk(argv[i], "ef")) {
             i++;
         } else if (!is_opt) {
-            add_to_llist(files, argv[i], false);
+            files = add_to_llist(files, argv[i], false);
             st->files_to_search++;
         }
     }
+    return files == NULL;
 }
 
 void parse_options(int argc, char *argv[], struct grep_state *st) {
@@ -97,20 +106,23 @@ void parse_options(int argc, char *argv[], struct grep_state *st) {
     }
 }
 
-void process_files(struct llist *patterns, struct llist *files, struct grep_state *st) {
+int process_files(struct llist *patterns, struct llist *files, struct grep_state *st) {
+    int status = 0;
     while (files != NULL) {
         FILE *f = fopen(files->data, "r");
         if (f != NULL) {
-            search_in_file(f, files->data, patterns, st);
+            status = search_in_file(f, files->data, patterns, st);
             fclose(f);
         } else if (!st->flags.s) {
             print_error();
         }
         files = files->next;
     }
+    return status;
 }
 
-void search_in_file(FILE *f, char *filename, struct llist *patterns, struct grep_state *st) {
+int search_in_file(FILE *f, char *filename, struct llist *patterns, struct grep_state *st) {
+    int status = 0;
     ssize_t len = 0;
     size_t lines_count = 1;
     size_t match_count = 0;
@@ -119,21 +131,20 @@ void search_in_file(FILE *f, char *filename, struct llist *patterns, struct grep
         size_t s = 0;
         len = getline(&buffer, &s, f);
         if (len == -1) {
-            free(buffer);
+            status |= buffer != NULL;
+            if (status) free(buffer);
             break;
         }
         bool match = find_patterns_in_line(buffer, patterns, st);
         if (buffer[len - 1] == '\n') buffer[len - 1] = '\0';
-        if (match && !st->flags.l && !st->flags.c) {
+        if (match && !st->flags.l && !st->flags.c)
             output_line(buffer, filename, lines_count, st);
-        }
         free(buffer);
         lines_count++;
         match_count += match;
     }
     output_filename_and_count(filename, match_count, st);
-    if (ferror(f) && !st->flags.s)
-        print_error();
+    return status;
 }
 
 bool find_patterns_in_line(char *line, struct llist *patterns, struct grep_state *st) {
@@ -204,21 +215,26 @@ void output_filename_and_count(char *filename, size_t match_count, struct grep_s
 
 struct llist* initialize_llist() {
     struct llist *ll = malloc(sizeof(struct llist));
-    ll->next = NULL;
-    ll->data = NULL;
-    ll->heap_used = false;
+    if (ll != NULL) {
+        ll->next = NULL;
+        ll->data = NULL;
+        ll->heap_used = false;
+    }
     return ll;
 }
 
-void add_to_llist(struct llist *ll, void *value, bool heap_used) {
+struct llist* add_to_llist(struct llist *ll, void *value, bool heap_used) {
     struct llist *cursor = ll;
     while (cursor->next != NULL)
         cursor = cursor->next;
     struct llist *new = malloc(sizeof(struct llist));
-    new->data = value;
-    new->heap_used = heap_used;
-    new->next = NULL;
-    cursor->next = new;
+    if (new != NULL) {
+        new->data = value;
+        new->heap_used = heap_used;
+        new->next = NULL;
+        cursor->next = new;
+    }
+    return cursor;
 }
 
 void free_llist(struct llist *ll) {
