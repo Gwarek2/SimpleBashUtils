@@ -1,9 +1,9 @@
 #ifndef S21_CAT
 #define S21_CAT
 
-#define CAT_DEFAULT {\
-    { false, false, false, false, false, false },\
-    1, false, false, '\n'\
+#define CAT_DEFAULT { \
+    { false, false, false, false, false, false }, \
+    1, false, false, '\n' \
 };
 
 #define LINE_N_FMT "%6zu\t"
