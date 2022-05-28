@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from itertools import permutations
 import unittest
 import os
@@ -6,7 +8,7 @@ import difflib
 
 CAT_FILE = "cat.txt"
 S21_CAT_FILE = "s21_cat.txt"
-FILES_DIR = "../../datasets"
+FILES_DIR = "../../datasets/cat"
 
 def get_test_files():
     return tuple(

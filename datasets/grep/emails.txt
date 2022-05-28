@@ -1,0 +1,8 @@
+geon@ihateregex.io
+test@gmail.com mail@test.org
+mail@testing.com
+hello@
+@test
+email@gmail
+theproblem@test@gmail.com
+mail with@space.com
