@@ -1,5 +1,7 @@
 ALL_C=$(shell find . -name "*.c")
 
+all: s21_cat s21_grep
+
 s21_cat:
 	make -C cat s21_cat
 
