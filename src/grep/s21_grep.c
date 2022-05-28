@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
 
     free_llist(patterns);
     free_llist(files);
-    if (status) print_error();
+    if (status) print_error("", "");
     return status;
 }
 
@@ -67,7 +67,7 @@ struct llist* read_regex_from_file(char *filename, struct llist *patterns) {
             patterns = add_to_llist(patterns, str, true);
         }
     } else {
-        print_error();
+        print_error("grep", filename);
     }
     return patterns;
 }
@@ -118,7 +118,7 @@ int process_files(struct llist *patterns, struct llist *files, struct grep_state
                 status = search_offsets_in_file(f, files->data, patterns, st);
             fclose(f);
         } else if (!st->flags.s) {
-            print_error();
+            print_error("grep", files->data);
         }
         files = files->next;
     }

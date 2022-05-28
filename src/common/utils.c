@@ -4,9 +4,12 @@
 
 #include "utils.h"
 
-void print_error() {
-    fputs(strerror(errno), stderr);
-    putchar('\n');
+void print_error(char *program, char *context) {
+    if (*program)
+        fprintf(stderr, "%s: ", program);
+    if (*context)
+        fprintf(stderr, "%s: ", context);
+    fprintf(stderr, "%s\n", strerror(errno));
 }
 
 size_t get_dash_index(const char *str) {

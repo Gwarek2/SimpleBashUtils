@@ -68,7 +68,7 @@ void print_file(const char *filename, struct cat_state *st) {
         while (print_line(f, st) != EOF) {}
         fclose(f);
     } else {
-        print_error();
+        print_error("cat", filename);
     }
 }
 
