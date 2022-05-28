@@ -2,9 +2,9 @@
 #define GREP
 
 
-#define GREP_DEFAULT {\
-    { false, false, false, false, false, false, false, false, false, false },\
-    0, 0, 0\
+#define GREP_DEFAULT { \
+    { false, false, false, false, false, false, false, false, false, false }, \
+    false, 0, 0, 0 \
 };
 
 #define RED printf("\x1b[31m");
@@ -24,6 +24,7 @@ struct grep_state {
         bool f;
         bool o;
     } flags;
+    bool empty_pattern;
     size_t files_to_search;
     size_t match_count;
     size_t first_regex_index;
