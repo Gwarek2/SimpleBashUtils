@@ -46,8 +46,17 @@ int parse_regexes(int argc, char *argv[], struct llist *patterns, struct grep_st
             patterns = read_regex_from_file(argv[i], patterns);
         }
     }
-    if (!st->flags.e && !st->flags.f)
-        patterns = add_to_llist(patterns, *argv, false);
+    if (!st->flags.e && !st->flags.f) {
+        bool match = false;
+        int i = 0;
+        while (!match && i < argc)
+            match = get_dash_index(argv[i++]) != 1;
+        if (match) {
+            st->first_regex_index = i--;
+            patterns = add_to_llist(patterns, argv[i], false);
+            
+        }
+    }
     return patterns == NULL;
 }
 
@@ -73,8 +82,8 @@ struct llist* read_regex_from_file(char *filename, struct llist *patterns) {
 }
 
 int parse_files(int argc, char *argv[], struct llist *files, struct grep_state *st) {
-    int start = 0;
-    if (!st->flags.e && !st->flags.f) start = 1;
+    int start = st->first_regex_index;
+    if (st->flags.e || st->flags.f) start = 0;
     for (int i = start; i < argc && files != NULL; i++) {
         bool is_opt = get_dash_index(argv[i]) == 1;
         if (is_opt && strpbrk(argv[i], "ef")) {
