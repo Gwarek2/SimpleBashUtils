@@ -1,5 +1,5 @@
 CC=gcc
-FLAGS=-Wall -Werror -Wextra -std=c11 #-g -fsanitize=address
+FLAGS=-Wall -Werror -Wextra #-g -fsanitize=address
 CAT_FILES=../common/utils.c s21_cat.c
 
 .PHONY: s21_cat

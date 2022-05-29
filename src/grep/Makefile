@@ -1,5 +1,5 @@
 CC=gcc
-FLAGS=-Wall -Werror -Wextra -std=c11 -g -fsanitize=address
+FLAGS=-Wall -Werror -Wextra -g #-fsanitize=address
 GREP_FILES=s21_grep.c ../common/utils.c
 
 .PHONY: s21_grep
