@@ -9,6 +9,8 @@ import difflib
 CAT_FILE = "cat.txt"
 S21_CAT_FILE = "s21_cat.txt"
 FILES_DIR = "../../datasets/cat"
+LEAK_CHECK="valgrind --leak-check=full --show-leak-kinds=all --log-file=leak.txt"
+
 
 def get_test_files():
     return tuple(
@@ -17,17 +19,18 @@ def get_test_files():
         )
 
 
-def get_diff():
-    with open(S21_CAT_FILE, "r") as f1, open(CAT_FILE, "r") as f2:
+def get_diff(file1=S21_CAT_FILE, file2=CAT_FILE):
+    with open(file2, "r") as f1, open(file2, "r") as f2:
         s1 = f1.readlines()
         s2 = f2.readlines()
     return "".join(
-        difflib.unified_diff(s1, s2, fromfile=S21_CAT_FILE, tofile=CAT_FILE)
+        difflib.unified_diff(s1, s2, fromfile=file1, tofile=file2)
     )
 
 def execute_cat(*args):
-    os.system(f"./s21_cat {' '.join(args)} > {S21_CAT_FILE}")
+    os.system(f"{LEAK_CHECK} ./s21_cat {' '.join(args)} > {S21_CAT_FILE}")
     os.system(f"cat {' '.join(args)} > {CAT_FILE}")
+    os.system("cat leak.txt >> leak_report.txt")
 
 
 def skip_if_not_gnu(test_func):
@@ -334,4 +337,7 @@ class CatMultipleOptionsMultipleFilesTestCase(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    log_file = "result.txt"
+    with open(log_file, "w") as f:
+        tr = unittest.TextTestRunner(f)
+        unittest.main(testRunner=tr)
