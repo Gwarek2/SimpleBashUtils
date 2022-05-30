@@ -3,17 +3,17 @@
 
 
 #define GREP_DEFAULT { \
-    { false, false, false, false, false, false, false, false, false, false }, \
+    { false, false, false, false, false, false, false, false, false, false, false }, \
     false, 0, 0, 0 \
 };
 
-#define RED printf("\x1b[31m");
-#define RED_END printf("\x1b[0m");
+#define MATCH_HIGHLIGHT printf("\x1b[31m");
+#define RESET printf("\x1b[0m");
 
 
 struct grep_state {
     struct {
-        bool e, i, v, c, l, n, h, s, f, o;
+        bool e, i, v, c, l, n, h, s, f, o, ext;
     } flags;
     bool empty_pattern;
     size_t files_to_search;
@@ -48,7 +48,7 @@ bool find_substrings_in_line(char *line, struct llist *patterns, struct grep_sta
 bool find_substrings(char *line, char *pattern, struct offset_array *pmatch_arr, struct grep_state *st);
 void output_line(char *line, char *filename, size_t line_number, struct grep_state *st);
 void output_substrings(char *line, char *filename, size_t linse_number, struct offset_array *pmatch_arr, struct grep_state *st);
-void output_filename_and_count(char *filename, size_t match_count, struct grep_state *st);
+void output_filename_and_count(char *filename, size_t match_count, bool match, struct grep_state *st);
 void print_line_credentials(char *filename, size_t line_number, struct grep_state *st);
 
 int regmatch_cmp(const void *offset1, const void *offset2);

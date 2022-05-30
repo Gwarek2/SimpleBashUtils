@@ -39,6 +39,7 @@ int parse_cmd_args(int argc, char *argv[], struct grep_state *st,
 }
 
 int parse_regexes(int argc, char *argv[], struct llist *patterns, struct grep_state *st) {
+    // Search for patterns after -e and -f flags
     for (int i = 0; i < argc - 1 && patterns != NULL; i++) {
         bool is_opt = get_dash_index(argv[i]) == 1;
         if (is_opt && strchr(argv[i], 'e')) {
@@ -51,6 +52,7 @@ int parse_regexes(int argc, char *argv[], struct llist *patterns, struct grep_st
             patterns = read_regex_from_file(argv[i], patterns);
         }
     }
+    // Search for first pattern if no -e and -f flag were detected
     if (!st->flags.e && !st->flags.f) {
         bool match = false;
         int i = 0;
@@ -113,6 +115,7 @@ void parse_options(int argc, char *argv[], struct grep_state *st) {
                 st->flags.h |= *opt_str == 'h';
                 st->flags.s |= *opt_str == 's';
                 st->flags.o |= *opt_str == 'o';
+                st->flags.ext |= *opt_str == 'E';
                 if (*opt_str == 'e' || *opt_str == 'f') i++;
                 opt_str++;
             }
@@ -147,6 +150,7 @@ int process_files(struct llist *patterns, struct llist *files, struct grep_state
     return status;
 }
 
+// Search only for match in file content and does not care about its offsets
 int search_matches_in_file(FILE *f, char *filename, struct llist *patterns, struct grep_state *st) {
     int status = 0;
     size_t lines_count = 1;
@@ -172,7 +176,7 @@ int search_matches_in_file(FILE *f, char *filename, struct llist *patterns, stru
         lines_count++;
         match_count += match;
     }
-    output_filename_and_count(filename, match_count, st);
+    output_filename_and_count(filename, match_count, match, st);
     return status;
 }
 
@@ -188,13 +192,14 @@ bool find_match_in_line(char *line, struct llist *patterns, struct grep_state *s
 bool find_match(char *line, char *pattern, struct grep_state *st) {
     bool match = false;
     int cflag = st->flags.i ? REG_ICASE : 0;
+    cflag |= st->flags.ext ? REG_EXTENDED : 0;
     regex_t re;
     int status = regcomp(&re, pattern, cflag | REG_NOSUB);
-    if (status == 0) {
+    if (status == 0 && *pattern) {
         status = regexec(&re, line, 0, NULL, 0);
         regfree(&re);
         match = (!status) ^ (st->flags.v);
-    } else if (status != REG_EMPTY) {
+    } else if (*pattern) {
         print_regex_error(status, &re);
     } else {
         match = !st->flags.v;
@@ -202,6 +207,7 @@ bool find_match(char *line, char *pattern, struct grep_state *st) {
     return match;
 }
 
+// Search not only for match, but for its offsets too
 int search_substrings_in_file(FILE *f, char *filename, struct llist *patterns, struct grep_state *st) {
     int status = 0;
     size_t lines_count = 1;
@@ -247,10 +253,11 @@ bool find_substrings_in_line(char *line, struct llist *patterns,
 bool find_substrings(char *line, char *pattern, struct offset_array *pmatch_arr, struct grep_state *st) {
     bool match = false;
     int cflag = st->flags.i ? REG_ICASE : 0;
+    cflag |= st->flags.ext ? REG_EXTENDED : 0;
     regex_t re;
 
     int status = regcomp(&re, pattern, cflag);
-    if (status == 0) {
+    if (status == 0 && *pattern) {
         int i = 0;
         while (true) {
             int index = pmatch_arr->last_index;
@@ -270,19 +277,21 @@ bool find_substrings(char *line, char *pattern, struct offset_array *pmatch_arr,
         }
         st->empty_pattern &= !match;
         regfree(&re);
-    } else if (status != REG_EMPTY) {
+    } else if (*pattern) {
         print_regex_error(status, &re);
-    } else if (status == REG_EMPTY) {
+    } else {
         st->empty_pattern = true;
     }
     return match;
 }
 
+// Outputs just line with no higlight
 void output_line(char *line, char *filename, size_t line_number, struct grep_state *st) {
     print_line_credentials(filename, line_number, st);
     puts(line);
 }
 
+// Outputs matching line with highlited matching substrings (only substrings if -o given)
 void output_substrings(char *line, char *filename, size_t line_number,
                        struct offset_array *pmatch_arr, struct grep_state *st) {
     if (!st->flags.o) print_line_credentials(filename, line_number, st);
@@ -294,9 +303,10 @@ void output_substrings(char *line, char *filename, size_t line_number,
                 putchar(line[end++]);
             int start = pmatch_arr->data[i].rm_so;
             end = pmatch_arr->data[i].rm_eo;
-            for (int j = start; j < end; j++) {
-                RED putchar(line[j]); RED_END
-            }
+            // MATCH_HIGHLIGHT
+            for (int j = start; j < end; j++)
+                putchar(line[j]);
+            // RESET
             if (st->flags.o) putchar('\n');
         }
     }
@@ -307,6 +317,7 @@ void output_substrings(char *line, char *filename, size_t line_number,
         putchar('\n');
 }
 
+// Outputs filename and/or line number if corresponding flags and conditions are present
 void print_line_credentials(char *filename, size_t line_number, struct grep_state *st) {
     if (!st->flags.h && st->files_to_search > 1)
         printf("%s:", filename);
@@ -314,15 +325,17 @@ void print_line_credentials(char *filename, size_t line_number, struct grep_stat
         printf("%zu:", line_number);
 }
 
-void output_filename_and_count(char *filename, size_t match_count, struct grep_state *st) {
-    if (st->flags.l) {
+// Output for -l and -c flags
+void output_filename_and_count(char *filename, size_t match_count, bool match,  struct grep_state *st) {
+    if (match && st->flags.l) {
         puts(filename);
-    } else if (st->flags.c) {
+    } else if ((match || !st->flags.l) && st->flags.c) {
         if (!st->flags.h && st->files_to_search > 1) printf("%s:", filename);
         printf("%zu\n", match_count);
     }
 }
 
+// Comparator for standard qsort
 int regmatch_cmp(const void *offset1, const void *offset2) {
     const regmatch_t *pmatch1 = offset1;
     const regmatch_t *pmatch2 = offset2;
@@ -344,6 +357,8 @@ struct llist* initialize_llist() {
     return ll;
 }
 
+
+// Returns the last element
 struct llist* add_to_llist(struct llist *ll, void *value, bool heap_used) {
     struct llist *cursor = ll;
     while (cursor->next != NULL)
@@ -353,9 +368,9 @@ struct llist* add_to_llist(struct llist *ll, void *value, bool heap_used) {
         new->data = value;
         new->heap_used = heap_used;
         new->next = NULL;
-        cursor->next = new;
     }
-    return cursor;
+    cursor->next = new;
+    return cursor->next;
 }
 
 void free_llist(struct llist *ll) {
