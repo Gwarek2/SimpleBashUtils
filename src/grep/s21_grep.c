@@ -81,6 +81,7 @@ struct llist* read_regex_from_file(char *filename, struct llist *patterns) {
             if (str[len - 1] == '\n') str[len - 1] = '\0';
             patterns = add_to_llist(patterns, str, true);
         }
+        fclose(f);
     } else {
         print_error("grep", filename);
     }
@@ -197,13 +198,13 @@ bool find_match(char *line, char *pattern, struct grep_state *st) {
     int status = regcomp(&re, pattern, cflag | REG_NOSUB);
     if (status == 0 && *pattern) {
         status = regexec(&re, line, 0, NULL, 0);
-        regfree(&re);
         match = !status;
     } else if (*pattern) {
         print_regex_error(status, &re);
     } else {
         match = true;
     }
+    regfree(&re);
     return match;
 }
 
@@ -240,7 +241,7 @@ int search_substrings_in_file(FILE *f, char *filename, struct llist *patterns, s
 }
 
 bool find_substrings_in_line(char *line, struct llist *patterns,
-                          struct grep_state *st, struct offset_array *pmatch_arr) {
+                             struct grep_state *st, struct offset_array *pmatch_arr) {
     bool match = false;
     st->empty_pattern = false;
     while (patterns != NULL && pmatch_arr->data != NULL) {
@@ -279,12 +280,12 @@ bool find_substrings(char *line, char *pattern, struct offset_array *pmatch_arr,
             i = pmatch_arr->data[index].rm_eo;
         }
         st->empty_pattern &= !match;
-        regfree(&re);
     } else if (*pattern) {
         print_regex_error(status, &re);
     } else {
         st->empty_pattern = true;
     }
+    regfree(&re);
     return match;
 }
 
@@ -390,5 +391,5 @@ void print_regex_error(int err_code, regex_t *re) {
     char buff[128];
     regerror(err_code, re, buff, 128);
     fputs(buff, stderr);
-    putchar('\n');
+    fputc('\n', stderr);
 }

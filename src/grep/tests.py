@@ -12,6 +12,7 @@ S21_ERR = "s21_err.txt"
 ERR = "err.txt"
 FILES_DIR = "../../datasets/grep"
 REGEXES_DIR = "../../datasets/grep/regex"
+LEAK_CHECK="valgrind --leak-check=full --log-file=leak.txt  --show-leak-kinds=all"
 
 REGEXES = {
     "1": "e",
@@ -44,8 +45,9 @@ def get_diff(file1=S21_GREP_FILE, file2=GREP_FILE):
 
 
 def execute_grep(*args):
-    os.system(f"./s21_grep {' '.join(args)} > {S21_GREP_FILE} 2> {S21_ERR}")
+    os.system(f"{LEAK_CHECK} ./s21_grep {' '.join(args)} > {S21_GREP_FILE} 2> {S21_ERR}")
     os.system(f"grep {' '.join(args)} > {GREP_FILE} 2> {ERR}")
+    os.system("cat leak.txt >> leak_report.txt")
 
 
 class GrepSingleOptionTestCase(unittest.TestCase):
@@ -157,6 +159,7 @@ class GrepSingleOptionTestCase(unittest.TestCase):
         os.remove(GREP_FILE)
         os.remove(S21_ERR)
         os.remove(ERR)
+        os.remove("leak.txt")
 
 
 class GrepMultipleOptionsTestCase(unittest.TestCase):
@@ -185,7 +188,7 @@ class GrepMultipleOptionsTestCase(unittest.TestCase):
         os.remove(GREP_FILE)
         os.remove(S21_ERR)
         os.remove(ERR)
-
+        os.remove("leak.txt")
 
 
 class GrepMultipleOptionsAndFilesTestCase(unittest.TestCase):
@@ -213,6 +216,7 @@ class GrepMultipleOptionsAndFilesTestCase(unittest.TestCase):
         os.remove(GREP_FILE)
         os.remove(S21_ERR)
         os.remove(ERR)
+        os.remove("leak.txt")
 
 
 if __name__ == "__main__":
