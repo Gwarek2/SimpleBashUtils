@@ -1,0 +1,20 @@
+commit f82b8c24b74ecc42f5190865b3ae7cd756642aaf
+Merge: f902eeb aa91c80
+Author: Werlag Deckard <werlagde@student.21-school.ru>
+Date:   Sat May 28 13:05:03 2022 +0000
+
+    Merge branch 'master' into 'master'
+    
+    Merge master branch of project (id = 27877) into master branch of project (id = 78501)
+    
+    See merge request students/C3_SimpleBashUtils.ID_353513/werlagde_student.21_school.ru/C3_SimpleBashUtils-0!1
+
+commit aa91c809d38f8f5be38e84735c038c52835c3e64
+Author: Administrator <admin@21-school.ru>
+Date:   Sat May 28 12:52:01 2022 +0000
+
+    Update from 29
+
+commit f902eebfa33dc35f609eea67a3d4b12a9360a47f
+Author: Administrator <admin@21-school.ru>
+Date:   Thu May 12 15:48:10 2022 +0000
