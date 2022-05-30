@@ -160,7 +160,7 @@ int search_matches_in_file(FILE *f, char *filename, struct llist *patterns, stru
         char *buffer = NULL;
         ssize_t len = 0;
         size_t s = 0;
-        if (!(match && st->flags.l)) {
+        if (!match || !st->flags.l) {
             len = getline(&buffer, &s, f);
             status = buffer == NULL;
         }
@@ -182,11 +182,11 @@ int search_matches_in_file(FILE *f, char *filename, struct llist *patterns, stru
 
 bool find_match_in_line(char *line, struct llist *patterns, struct grep_state *st) {
     bool match = false;
-    while (patterns != NULL && !match) {
-        match = find_match(line, patterns->data, st);
+    while (patterns != NULL && (!match || st->flags.v)) {
+        match |= find_match(line, patterns->data, st);
         patterns = patterns->next;
     }
-    return match;
+    return match ^ st->flags.v;
 }
 
 bool find_match(char *line, char *pattern, struct grep_state *st) {
@@ -198,11 +198,11 @@ bool find_match(char *line, char *pattern, struct grep_state *st) {
     if (status == 0 && *pattern) {
         status = regexec(&re, line, 0, NULL, 0);
         regfree(&re);
-        match = (!status) ^ (st->flags.v);
+        match = !status;
     } else if (*pattern) {
         print_regex_error(status, &re);
     } else {
-        match = !st->flags.v;
+        match = true;
     }
     return match;
 }
@@ -261,8 +261,7 @@ bool find_substrings(char *line, char *pattern, struct offset_array *pmatch_arr,
         int i = 0;
         while (true) {
             int index = pmatch_arr->last_index;
-            status = regexec(&re, line + i, 1, pmatch_arr->data + index, 0) ||
-                     pmatch_arr->data[index].rm_so == pmatch_arr->data[index].rm_eo;
+            status = regexec(&re, line + i, 1, pmatch_arr->data + index, 0) || !line[i];
             match |= !status;
             regmatch_t *new_array = realloc(pmatch_arr->data, sizeof(regmatch_t) * (index + 2));
             if (new_array != NULL)
@@ -270,6 +269,10 @@ bool find_substrings(char *line, char *pattern, struct offset_array *pmatch_arr,
             else
                 free(pmatch_arr->data);
             if (new_array == NULL || status != 0) break;
+            if (pmatch_arr->data[index].rm_so == pmatch_arr->data[index].rm_eo && line[i]) {
+                i++;
+                continue;
+            }
             pmatch_arr->data[index].rm_so += i;
             pmatch_arr->data[index].rm_eo += i;
             pmatch_arr->last_index++;
@@ -342,7 +345,7 @@ int regmatch_cmp(const void *offset1, const void *offset2) {
     int result = -1;
     if (pmatch2->rm_so < pmatch1->rm_so)
         result = 1;
-    else if (pmatch2->rm_so == pmatch1->rm_so && pmatch2->rm_eo < pmatch1->rm_eo)
+    else if (pmatch2->rm_so == pmatch1->rm_so && pmatch2->rm_eo > pmatch1->rm_eo)
         result = 1;
     return result;
 }
