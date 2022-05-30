@@ -1,4 +1,4 @@
 [[:alnum:]]*@[[:alnum:]]*\.[[:alnum:]]*
 [[:digit:]]\{1,3\}.
-[[:digit:]a-fA-F]]*
+[[:digit:]a-fA-F]]
 [[:digit:]]
