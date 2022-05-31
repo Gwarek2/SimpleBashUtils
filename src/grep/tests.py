@@ -3,6 +3,7 @@
 from itertools import permutations
 import unittest
 import os
+import sys
 import difflib
 
 
@@ -12,14 +13,14 @@ S21_ERR = "s21_err.txt"
 ERR = "err.txt"
 FILES_DIR = "../../datasets/grep"
 REGEXES_DIR = "../../datasets/grep/regex"
-LEAK_CHECK="valgrind --leak-check=full --log-file=leak.txt  --show-leak-kinds=all"
+LEAK_CHECK="valgrind --leak-check=full --log-file=leak.txt  --show-leak-kinds=all" if sys.platform == "linux" else ''
 
 REGEXES = {
     "1": "e",
     "2": "E",
     "3": "commit",
     "5": "Lorem",
-    "6": "rotec",
+    "6": "protec",
     "hex": "'[[:digit:]a-fA-F]]\\{1,\\}'",
     "decimal": "'[[:digit:]]\\{1,\\}'",
     "octal": "'[0-7]\\{1,\\}'",
@@ -45,9 +46,9 @@ def get_diff(file1=S21_GREP_FILE, file2=GREP_FILE):
 
 
 def execute_grep(*args):
-    os.system(f"{LEAK_CHECK} ./s21_grep {' '.join(args)} > {S21_GREP_FILE} 2> {S21_ERR}")
+    os.system(f"./s21_grep {' '.join(args)} > {S21_GREP_FILE} 2> {S21_ERR}")
     os.system(f"grep {' '.join(args)} > {GREP_FILE} 2> {ERR}")
-    os.system("cat leak.txt >> leak_report.txt")
+    # os.system("cat leak.txt >> leak_report.txt 2> /dev/null")
 
 
 class GrepSingleOptionTestCase(unittest.TestCase):
@@ -159,7 +160,6 @@ class GrepSingleOptionTestCase(unittest.TestCase):
         os.remove(GREP_FILE)
         os.remove(S21_ERR)
         os.remove(ERR)
-        os.remove("leak.txt")
 
 
 class GrepMultipleOptionsTestCase(unittest.TestCase):
@@ -188,7 +188,6 @@ class GrepMultipleOptionsTestCase(unittest.TestCase):
         os.remove(GREP_FILE)
         os.remove(S21_ERR)
         os.remove(ERR)
-        os.remove("leak.txt")
 
 
 class GrepMultipleOptionsAndFilesTestCase(unittest.TestCase):
@@ -198,7 +197,6 @@ class GrepMultipleOptionsAndFilesTestCase(unittest.TestCase):
     def setUp(self):
         self.t_files = get_test_files(FILES_DIR)
         self.regexes = " -e ".join(REGEXES.values())
-
 
     def test_two_options(self):
         for opts in permutations(self.options, 2):
@@ -216,11 +214,12 @@ class GrepMultipleOptionsAndFilesTestCase(unittest.TestCase):
         os.remove(GREP_FILE)
         os.remove(S21_ERR)
         os.remove(ERR)
-        os.remove("leak.txt")
 
 
 if __name__ == "__main__":
     log_file = "result.txt"
+    # os.remove("leak_report.txt")
     with open(log_file, "w") as f:
         tr = unittest.TextTestRunner(f)
         unittest.main(testRunner=tr)
+    # os.remove("leak.txt")
