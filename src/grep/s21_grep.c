@@ -173,7 +173,8 @@ void search_matches_in_file(FILE *f, char *filename, struct llist *patterns, str
 bool find_match_in_line(char *line, struct llist *patterns, struct grep_state *st) {
     bool match = false;
     while (patterns != NULL && (!match || st->options.v) && !st->regex_error) {
-        match |= find_match(line, patterns->data, st);
+        char *pattern = (char*) patterns->data;
+        match |= !*pattern || find_match(line, pattern, st);
         patterns = patterns->next;
     }
     return (match ^ st->options.v) ^ st->regex_error;
@@ -182,9 +183,8 @@ bool find_match_in_line(char *line, struct llist *patterns, struct grep_state *s
 bool find_match(char *line, char *pattern, struct grep_state *st) {
     regex_t re;
     int status = regcomp(&re, pattern, st->cflags | REG_NOSUB);
-    if      (!*pattern)   status = 0;
-    else if (status == 0) status = regexec(&re, line, 0, NULL, 0);
-    else                  print_regex_error(status, &re);
+    if (status == 0) status = regexec(&re, line, 0, NULL, 0);
+    else             print_regex_error(status, &re);
     regfree(&re);
     st->regex_error = status != 0 && status != REG_NOMATCH;
     return status == 0;
@@ -210,25 +210,27 @@ void search_substrings_in_file(FILE *f, char *filename, struct llist *patterns, 
         if (len == 0) len = 1;
         if (buffer[len - 1] == '\n') buffer[len - 1] = '\0';
         bool match = find_substrings_in_line(buffer, patterns, st, &pmatch_arr);
-        if (!st->fatal_error && !st->regex_error) {
+        if (match && !st->fatal_error && !st->regex_error) {
             qsort(pmatch_arr.data, pmatch_arr.last_index, sizeof(regmatch_t), &regmatch_cmp);
             if (st->empty_pattern && !st->options.o)
                 output_line(buffer, filename, lines_count, st);
-            else if (match)
+            else
                 output_substrings(buffer, filename, lines_count, &pmatch_arr, st);
         }
         free(pmatch_arr.data);
         free(buffer);
         lines_count++;
+        st->empty_pattern = false;
     }
 }
 
 bool find_substrings_in_line(char *line, struct llist *patterns,
                              struct grep_state *st, struct offset_array *pmatch_arr) {
     bool match = false;
-    st->empty_pattern = false;
     while (patterns != NULL && !st->fatal_error && !st->regex_error) {
-        match |= find_substrings(line, patterns->data, pmatch_arr, st);
+        char *pattern = (char*) patterns->data;
+        st->empty_pattern |= !*pattern;
+        match |= !*pattern || find_substrings(line, pattern, pmatch_arr, st);
         patterns = patterns->next;
     }
     return match;
@@ -238,26 +240,24 @@ bool find_substrings(char *line, char *pattern, struct offset_array *pmatch_arr,
     regex_t re;
     bool match = false;
     int status = regcomp(&re, pattern, st->cflags);
-    if (!*pattern) {
-        match = true;
-    } else if (status == 0) {
+    if (status == 0) {
         int i = 0;
         while (true) {
             int index = pmatch_arr->last_index;
             status = regexec(&re, line + i, 1, pmatch_arr->data + index, 0) || !line[i];
             match |= !status;
             regmatch_t *new_array = realloc(pmatch_arr->data, sizeof(regmatch_t) * (index + 2));
-            if (new_array != NULL)
-                pmatch_arr->data = new_array;
+            st->fatal_error = new_array == NULL;
+            if (new_array != NULL)                pmatch_arr->data = new_array;
             if (new_array == NULL || status != 0) break;
             if (pmatch_arr->data[index].rm_so == pmatch_arr->data[index].rm_eo && line[i]) {
                 i++;
-                continue;
+            } else {
+                pmatch_arr->data[index].rm_so += i;
+                pmatch_arr->data[index].rm_eo += i;
+                i = pmatch_arr->data[index].rm_eo;
+                pmatch_arr->last_index++;
             }
-            pmatch_arr->data[index].rm_so += i;
-            pmatch_arr->data[index].rm_eo += i;
-            pmatch_arr->last_index++;
-            i = pmatch_arr->data[index].rm_eo;
         }
     } else {
         print_regex_error(status, &re);

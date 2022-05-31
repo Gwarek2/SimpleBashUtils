@@ -8,7 +8,7 @@
 };
 
 #define MATCH_HIGHLIGHT printf("\x1b[31m");
-#define RESET printf("\x1b[0m");
+#define RESET           printf("\x1b[0m");
 
 
 struct grep_state {
