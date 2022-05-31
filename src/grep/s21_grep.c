@@ -197,7 +197,7 @@ void search_substrings_in_file(FILE *f, char *filename, struct llist *patterns, 
         char *buffer = NULL;
         ssize_t len = 0;
         size_t s = 0;
-        if (!st->fatal_error || !st->regex_error) len = getline(&buffer, &s, f);
+        if (!st->fatal_error && !st->regex_error) len = getline(&buffer, &s, f);
         struct offset_array pmatch_arr = { malloc(sizeof(regmatch_t)), 0 };
 
         st->fatal_error = pmatch_arr.data == NULL || buffer == NULL;
@@ -207,6 +207,7 @@ void search_substrings_in_file(FILE *f, char *filename, struct llist *patterns, 
             break;
         }
 
+        if (len == 0) len = 1;
         if (buffer[len - 1] == '\n') buffer[len - 1] = '\0';
         bool match = find_substrings_in_line(buffer, patterns, st, &pmatch_arr);
         if (!st->fatal_error && !st->regex_error) {
@@ -294,7 +295,7 @@ void output_substrings(char *line, char *filename, size_t line_number,
     int len = strlen(line);
     while (end < len && !st->options.o)
         putchar(line[end++]);
-    if (line[end - 1] != '\n' && !st->options.o)
+    if ((len == 0 || line[len - 1] != '\n') && !st->options.o)
         putchar('\n');
 }
 
