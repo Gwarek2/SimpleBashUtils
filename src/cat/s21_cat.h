@@ -27,10 +27,10 @@ struct cat_state {
     int last_symbol;
 };
 
-void read_flags(struct cat_state *st, size_t argv, char *args[]);
-void read_cat_flags(struct cat_state *st, char *str);
-void execute_cat_files(char *args[], size_t argv, struct cat_state *st);
-void execute_cat_stdin(struct cat_state *st);
+void read_cmd_flags(struct cat_state *st, size_t argv, char *args[]);
+void read_arg_flags(struct cat_state *st, char *str);
+void cat_files(char *args[], size_t argv, struct cat_state *st);
+void cat_stdin(struct cat_state *st);
 void print_file(const char *filename, struct cat_state *st);
 int print_line(FILE *f_stream, struct cat_state *st);
 void print_v_format(int ch);

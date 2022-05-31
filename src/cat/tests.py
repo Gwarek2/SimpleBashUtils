@@ -9,13 +9,12 @@ import difflib
 CAT_FILE = "cat.txt"
 S21_CAT_FILE = "s21_cat.txt"
 FILES_DIR = "../../datasets/cat"
-LEAK_CHECK="valgrind --leak-check=full --show-leak-kinds=all --log-file=leak.txt"
 
 
 def get_test_files():
     return tuple(
         os.path.join(FILES_DIR, file) for file in
-        filter(lambda file: file.endswith(".txt"), os.listdir(FILES_DIR, ))
+        filter(lambda file: file.endswith(".txt"), os.listdir(FILES_DIR))
         )
 
 
@@ -28,9 +27,8 @@ def get_diff(file1=S21_CAT_FILE, file2=CAT_FILE):
     )
 
 def execute_cat(*args):
-    os.system(f"{LEAK_CHECK} ./s21_cat {' '.join(args)} > {S21_CAT_FILE}")
+    os.system(f"./s21_cat {' '.join(args)} > {S21_CAT_FILE}")
     os.system(f"cat {' '.join(args)} > {CAT_FILE}")
-    os.system("cat leak.txt >> leak_report.txt")
 
 
 def skip_if_not_gnu(test_func):

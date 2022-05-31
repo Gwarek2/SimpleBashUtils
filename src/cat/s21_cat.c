@@ -6,25 +6,25 @@
 #include "s21_cat.h"
 #include "../common/utils.h"
 
-int main(int argv, char *argc[]) {
+int main(int argc, char *argv[]) {
     struct cat_state state = CAT_DEFAULT;
     setlocale(LC_ALL, "");
 
-    read_flags(&state, argv - 1, argc + 1);
+    read_cmd_flags(&state, argc - 1, argv + 1);
     if (state.filenames)
-        execute_cat_files(argc + 1, argv - 1, &state);
+        cat_files(argv + 1, argc - 1, &state);
     else
-        execute_cat_stdin(&state);
+        cat_stdin(&state);
 
     return 0;
 }
 
-void read_flags(struct cat_state *st, size_t argv, char *args[]) {
-    for (size_t i = 0; i < argv; i++)
-        read_cat_flags(st, args[i]);
+void read_cmd_flags(struct cat_state *st, size_t argc, char *args[]) {
+    for (size_t i = 0; i < argc; i++)
+        read_arg_flags(st, args[i]);
 }
 
-void read_cat_flags(struct cat_state *st, char *str) {
+void read_arg_flags(struct cat_state *st, char *str) {
     size_t last_dash = get_dash_index(str);
     str += last_dash;
     if (last_dash == 2) {
@@ -47,8 +47,8 @@ void read_cat_flags(struct cat_state *st, char *str) {
     st->flags.n_flag &= !st->flags.b_flag;
 }
 
-void execute_cat_files(char *args[], size_t argv, struct cat_state *st) {
-    for (size_t i = 0; i < argv; i++) {
+void cat_files(char *args[], size_t argc, struct cat_state *st) {
+    for (size_t i = 0; i < argc; i++) {
         size_t last_dash = get_dash_index(args[i]);
         if (last_dash == 0 || last_dash > 2)
             print_file(args[i], st);
@@ -58,7 +58,7 @@ void execute_cat_files(char *args[], size_t argv, struct cat_state *st) {
     }
 }
 
-void execute_cat_stdin(struct cat_state *st) {
+void cat_stdin(struct cat_state *st) {
     while (true) print_line(stdin, st);
 }
 
