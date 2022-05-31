@@ -35,20 +35,20 @@ struct offset_array {
     size_t last_index;
 };
 
-int parse_cmd_args(int argc, char *argv[], struct grep_state *st, struct llist *regexes, struct llist *files);
-int parse_regexes(int argc, char *argv[], struct llist *regexes, struct grep_state *st);
+void parse_cmd_args(int argc, char *argv[], struct grep_state *st, struct llist *regexes, struct llist *files);
+void parse_regexes(int argc, char *argv[], struct llist *regexes, struct grep_state *st);
 struct llist* read_regex_from_file(char *filename, struct llist *regexes);
-int parse_filenames(int argc, char *argv[], struct llist *files, struct grep_state *st);
+void parse_filenames(int argc, char *argv[], struct llist *files, struct grep_state *st);
 void parse_options(int argc, char *argv[], struct grep_state *st);
 
-int process_files(struct llist *patterns, struct llist *files, struct grep_state *st);
-int process_stdio(struct llist *patterns, struct grep_state *st);
+void process_files(struct llist *patterns, struct llist *files, struct grep_state *st);
+void process_stdio(struct llist *patterns, struct grep_state *st);
 
-int search_matches_in_file(FILE *f, char *filename, struct llist *patterns, struct grep_state *st);
+void search_matches_in_file(FILE *f, char *filename, struct llist *patterns, struct grep_state *st);
 bool find_match_in_line(char *line, struct llist *patterns, struct grep_state *st);
 bool find_match(char *line, char *pattern, struct grep_state *st);
 
-int search_substrings_in_file(FILE *f, char *filename, struct llist *patterns, struct grep_state *st);
+void search_substrings_in_file(FILE *f, char *filename, struct llist *patterns, struct grep_state *st);
 bool find_substrings_in_line(char *line, struct llist *patterns, struct grep_state *st, struct offset_array *pmatch_arr);
 bool find_substrings(char *line, char *pattern, struct offset_array *pmatch_arr, struct grep_state *st);
 

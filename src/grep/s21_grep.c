@@ -8,37 +8,32 @@
 #include "../common/utils.h"
 
 int main(int argc, char *argv[]) {
-    int error = 0;
     struct grep_state state = GREP_DEFAULT;
     struct llist *patterns = initialize_llist();
     struct llist *files = initialize_llist();
-    error = files == NULL || patterns == NULL;
 
-    if (!error)
-        error = parse_cmd_args(argc - 1, argv + 1, &state, patterns, files);
-    if (!error && patterns->next != NULL) {
+    parse_cmd_args(argc - 1, argv + 1, &state, patterns, files);
+    if (!state.fatal_error && patterns->next != NULL) {
         if (files->next != NULL)
-            error = process_files(patterns->next, files->next, &state);
+            process_files(patterns->next, files->next, &state);
         else
-            error = process_stdio(patterns->next, &state);
+            process_stdio(patterns->next, &state);
     }
 
     free_llist(patterns);
     free_llist(files);
-    if (error) print_error("grep", "");
-    return error ? EXIT_FAILURE : EXIT_SUCCESS;
+    if (state.fatal_error) print_error("grep", "");
+    return state.fatal_error ? EXIT_FAILURE : EXIT_SUCCESS;
 }
 
-int parse_cmd_args(int argc, char *argv[], struct grep_state *st,
+void parse_cmd_args(int argc, char *argv[], struct grep_state *st,
                    struct llist *patterns, struct llist *files) {
-    int error = 0;
-    error |= parse_regexes(argc, argv, patterns, st);
-    error |= parse_filenames(argc, argv, files, st);
+    parse_regexes(argc, argv, patterns, st);
+    parse_filenames(argc, argv, files, st);
     parse_options(argc, argv, st);
-    return error;
 }
 
-int parse_regexes(int argc, char *argv[], struct llist *patterns, struct grep_state *st) {
+void parse_regexes(int argc, char *argv[], struct llist *patterns, struct grep_state *st) {
     // Search for patterns after -e and -f flags
     for (int i = 0; i < argc - 1 && patterns != NULL; i++) {
         bool is_opt = get_dash_index(argv[i]) == 1;
@@ -58,12 +53,12 @@ int parse_regexes(int argc, char *argv[], struct llist *patterns, struct grep_st
         int i = 0;
         while (!match && i < argc)
             match = get_dash_index(argv[i++]) != 1;
-        if (match) {
+        if (match && patterns != NULL) {
             st->first_regex_index = i--;
             patterns = add_to_llist(patterns, argv[i], false);
         }
     }
-    return patterns == NULL;
+    st->fatal_error |= patterns == NULL;
 }
 
 struct llist* read_regex_from_file(char *filename, struct llist *patterns) {
@@ -88,7 +83,7 @@ struct llist* read_regex_from_file(char *filename, struct llist *patterns) {
     return patterns;
 }
 
-int parse_filenames(int argc, char *argv[], struct llist *files, struct grep_state *st) {
+void parse_filenames(int argc, char *argv[], struct llist *files, struct grep_state *st) {
     int start = st->first_regex_index;
     if (st->options.e || st->options.f) start = 0;
     for (int i = start; i < argc && files != NULL; i++) {
@@ -100,7 +95,7 @@ int parse_filenames(int argc, char *argv[], struct llist *files, struct grep_sta
             st->files_to_search++;
         }
     }
-    return files == NULL;
+    st->fatal_error |= files == NULL;
 }
 
 void parse_options(int argc, char *argv[], struct grep_state *st) {
@@ -124,36 +119,31 @@ void parse_options(int argc, char *argv[], struct grep_state *st) {
     }
 }
 
-int process_stdio(struct llist *patterns, struct grep_state *st) {
-    int error = 0;
+void process_stdio(struct llist *patterns, struct grep_state *st) {
     if (st->options.v || st->options.c || st->options.l)
-        error = search_matches_in_file(stdin, "(standard input)", patterns, st);
+        search_matches_in_file(stdin, "(standard input)", patterns, st);
     else
-        error = search_substrings_in_file(stdin, "(standard input)", patterns, st);
-    return error;
+         search_substrings_in_file(stdin, "(standard input)", patterns, st);
 }
 
-int process_files(struct llist *patterns, struct llist *files, struct grep_state *st) {
-    int error = 0;
+void process_files(struct llist *patterns, struct llist *files, struct grep_state *st) {
     while (files != NULL && !st->regex_error) {
         FILE *f = fopen(files->data, "r");
         if (f != NULL) {
             if (st->options.v || st->options.c || st->options.l)
-                error = search_matches_in_file(f, files->data, patterns, st);
+                search_matches_in_file(f, files->data, patterns, st);
             else
-                error = search_substrings_in_file(f, files->data, patterns, st);
+                search_substrings_in_file(f, files->data, patterns, st);
             fclose(f);
         } else if (!st->options.s) {
             print_error("grep", files->data);
         }
         files = files->next;
     }
-    return error;
 }
 
-// Search only for match in file content and does not care about its offsets
-int search_matches_in_file(FILE *f, char *filename, struct llist *patterns, struct grep_state *st) {
-    int error = 0;
+// Searches only for match in file content and does not care about its offsets
+void search_matches_in_file(FILE *f, char *filename, struct llist *patterns, struct grep_state *st) {
     size_t lines_count = 1;
     size_t match_count = 0;
     bool match = false;
@@ -178,7 +168,6 @@ int search_matches_in_file(FILE *f, char *filename, struct llist *patterns, stru
         match_count += match;
     }
     output_filename_and_count(filename, match_count, match, st);
-    return error;
 }
 
 bool find_match_in_line(char *line, struct llist *patterns, struct grep_state *st) {
@@ -201,9 +190,8 @@ bool find_match(char *line, char *pattern, struct grep_state *st) {
     return status == 0;
 }
 
-// Search not only for match, but for its offsets too
-int search_substrings_in_file(FILE *f, char *filename, struct llist *patterns, struct grep_state *st) {
-    int status = 0;
+// Searches not only for match, but for its offsets too
+void search_substrings_in_file(FILE *f, char *filename, struct llist *patterns, struct grep_state *st) {
     size_t lines_count = 1;
     while (true) {
         char *buffer = NULL;
@@ -232,7 +220,6 @@ int search_substrings_in_file(FILE *f, char *filename, struct llist *patterns, s
         free(buffer);
         lines_count++;
     }
-    return status;
 }
 
 bool find_substrings_in_line(char *line, struct llist *patterns,
@@ -329,7 +316,7 @@ void output_filename_and_count(char *filename, size_t match_count, bool match,  
     }
 }
 
-// Comparator for standard qsort
+// Comparator for regmatch offsets
 int regmatch_cmp(const void *offset1, const void *offset2) {
     const regmatch_t *pmatch1 = offset1;
     const regmatch_t *pmatch2 = offset2;
