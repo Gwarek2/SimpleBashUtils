@@ -9,8 +9,8 @@
 
 int main(int argc, char *argv[]) {
     struct grep_state state = GREP_DEFAULT;
-    struct llist *patterns = initialize_llist();
-    struct llist *files = initialize_llist();
+    llist_t *patterns = initialize_llist();
+    llist_t *files = initialize_llist();
 
     parse_cmd_args(argc - 1, argv + 1, &state, patterns, files);
     if (!state.fatal_error && patterns->next != NULL) {
@@ -27,13 +27,13 @@ int main(int argc, char *argv[]) {
 }
 
 void parse_cmd_args(int argc, char *argv[], struct grep_state *st,
-                   struct llist *patterns, struct llist *files) {
+                   llist_t *patterns, llist_t *files) {
     parse_regexes(argc, argv, patterns, st);
     parse_filenames(argc, argv, files, st);
     parse_options(argc, argv, st);
 }
 
-void parse_regexes(int argc, char *argv[], struct llist *patterns, struct grep_state *st) {
+void parse_regexes(int argc, char *argv[], llist_t *patterns, struct grep_state *st) {
     // Search for patterns after -e and -f flags
     for (int i = 0; i < argc - 1 && patterns != NULL; i++) {
         bool is_opt = get_dash_index(argv[i]) == 1;
@@ -61,7 +61,7 @@ void parse_regexes(int argc, char *argv[], struct llist *patterns, struct grep_s
     st->fatal_error |= patterns == NULL;
 }
 
-struct llist* read_regex_from_file(char *filename, struct llist *patterns) {
+llist_t* read_regex_from_file(char *filename, llist_t *patterns) {
     FILE *f = fopen(filename, "r");
     if (f != NULL) {
         while (true) {
@@ -83,7 +83,7 @@ struct llist* read_regex_from_file(char *filename, struct llist *patterns) {
     return patterns;
 }
 
-void parse_filenames(int argc, char *argv[], struct llist *files, struct grep_state *st) {
+void parse_filenames(int argc, char *argv[], llist_t *files, struct grep_state *st) {
     int start = st->first_regex_index;
     if (st->options.e || st->options.f) start = 0;
     for (int i = start; i < argc && files != NULL; i++) {
@@ -119,14 +119,14 @@ void parse_options(int argc, char *argv[], struct grep_state *st) {
     }
 }
 
-void process_stdio(struct llist *patterns, struct grep_state *st) {
+void process_stdio(llist_t *patterns, struct grep_state *st) {
     if (st->options.v || st->options.c || st->options.l)
         search_matches_in_file(stdin, "(standard input)", patterns, st);
     else
          search_substrings_in_file(stdin, "(standard input)", patterns, st);
 }
 
-void process_files(struct llist *patterns, struct llist *files, struct grep_state *st) {
+void process_files(llist_t *patterns, llist_t *files, struct grep_state *st) {
     while (files != NULL && !st->regex_error) {
         FILE *f = fopen(files->data, "r");
         if (f != NULL) {
@@ -143,7 +143,7 @@ void process_files(struct llist *patterns, struct llist *files, struct grep_stat
 }
 
 // Searches only for match in file content and does not care about its offsets
-void search_matches_in_file(FILE *f, char *filename, struct llist *patterns, struct grep_state *st) {
+void search_matches_in_file(FILE *f, char *filename, llist_t *patterns, struct grep_state *st) {
     size_t lines_count = 1;
     size_t match_count = 0;
     bool match = false;
@@ -170,7 +170,7 @@ void search_matches_in_file(FILE *f, char *filename, struct llist *patterns, str
     output_filename_and_count(filename, match_count, match, st);
 }
 
-bool find_match_in_line(char *line, struct llist *patterns, struct grep_state *st) {
+bool find_match_in_line(char *line, llist_t *patterns, struct grep_state *st) {
     bool match = false;
     while (patterns != NULL && (!match || st->options.v) && !st->regex_error) {
         char *pattern = (char*) patterns->data;
@@ -191,7 +191,7 @@ bool find_match(char *line, char *pattern, struct grep_state *st) {
 }
 
 // Searches not only for match, but for its offsets too
-void search_substrings_in_file(FILE *f, char *filename, struct llist *patterns, struct grep_state *st) {
+void search_substrings_in_file(FILE *f, char *filename, llist_t *patterns, struct grep_state *st) {
     size_t lines_count = 1;
     while (true) {
         char *buffer = NULL;
@@ -224,7 +224,7 @@ void search_substrings_in_file(FILE *f, char *filename, struct llist *patterns, 
     }
 }
 
-bool find_substrings_in_line(char *line, struct llist *patterns,
+bool find_substrings_in_line(char *line, llist_t *patterns,
                              struct grep_state *st, struct offset_array *pmatch_arr) {
     bool match = false;
     while (patterns != NULL && !st->fatal_error && !st->regex_error) {
@@ -326,8 +326,8 @@ int regmatch_cmp(const void *offset1, const void *offset2) {
     return result ? result : -1;
 }
 
-struct llist* initialize_llist() {
-    struct llist *ll = malloc(sizeof(struct llist));
+llist_t* initialize_llist() {
+    llist_t *ll = malloc(sizeof(llist_t));
     if (ll != NULL) {
         ll->next = NULL;
         ll->data = NULL;
@@ -338,11 +338,11 @@ struct llist* initialize_llist() {
 
 
 // Returns the last element
-struct llist* add_to_llist(struct llist *ll, void *value, bool heap_used) {
-    struct llist *cursor = ll;
+llist_t* add_to_llist(llist_t *ll, void *value, bool heap_used) {
+    llist_t *cursor = ll;
     while (cursor->next != NULL)
         cursor = cursor->next;
-    struct llist *new = malloc(sizeof(struct llist));
+    llist_t *new = malloc(sizeof(llist_t));
     if (new != NULL) {
         new->data = value;
         new->heap_used = heap_used;
@@ -352,9 +352,9 @@ struct llist* add_to_llist(struct llist *ll, void *value, bool heap_used) {
     return cursor->next;
 }
 
-void free_llist(struct llist *ll) {
+void free_llist(llist_t *ll) {
     while (ll != NULL) {
-        struct llist *tmp = ll;
+        llist_t *tmp = ll;
         ll = ll->next;
         if (tmp->heap_used)
             free(tmp->data);
