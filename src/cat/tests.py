@@ -27,8 +27,8 @@ def get_diff(file1=S21_CAT_FILE, file2=CAT_FILE):
     )
 
 def execute_cat(*args):
-    os.system(f"./s21_cat {' '.join(args)} > {S21_CAT_FILE}")
-    os.system(f"cat {' '.join(args)} > {CAT_FILE}")
+    os.system(f"./s21_cat {' '.join(args)} > {S21_CAT_FILE} 2> /dev/null")
+    os.system(f"cat {' '.join(args)} > {CAT_FILE} 2> /dev/null")
 
 
 def skip_if_not_gnu(test_func):
